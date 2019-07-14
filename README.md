@@ -12,14 +12,15 @@ Utils stuff is taken from [DARTS repository](https://github.com/quark0/darts/blo
 
 * Building blocks (searched layers) was taken from the FacebookResearch repository
 (Quick Note: their repo consists files with names fbnet*, but doesn't include any fbnet architecture from their paper)
-* All hyperparameters exactly as in the original paper
 * Latency Calculation Code
 * Successfully Tested on Cifar10
-* Logging. You can find all my logs and tensorboards into *SAVED_LOGS/supernet_training* (for supernet training) and *SAVED_LOGS/architectures_training* (for architectures training)
+* Logging. You can find all my logs and tensorboards into  *SAVED_LOGS/architectures_training* (for architectures training)
 
-#### TODO List
-* Multi-GPU Support
-* ImageNet Training. It will take 27 hours x 8 GPU 
+# Disadvantages
+* Loss : ![equation](http://www.sciweavers.org/tex2img.php?eq=CE%28a%2C%20w_a%29%20%5Ccdot%20%5Calpha%20%5Cbeta%20log%28LAT%28a%29%29&bc=White&fc=Black&im=jpg&fs=12&ff=arev&edit=0) instead of ![equation](http://www.sciweavers.org/tex2img.php?eq=CE%28a%2C%20w_a%29%20%5Ccdot%20%5Calpha%20%28log%28LAT%28a%29%29%29%5E%7B%5Cbeta%7D&bc=White&fc=Black&im=jpg&fs=12&ff=arev&edit=0) (occasionally)
+* SAVED_LOGS/supernet_training* (for supernet training) - logs with validation on training data (bug, code was fixed) 
+* No MultiGPU Support
+* Training only CIFAR10
 
 # Results, Cifar10
 

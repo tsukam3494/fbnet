@@ -18,8 +18,8 @@ Utils stuff is taken from [DARTS repository](https://github.com/quark0/darts/blo
 
 # Disadvantages
 * Loss : $CE(a, w_a) · α β log(LAT(a))$  instead of $CE(a, w_a) · α log(LAT(a))^β$ (occasionally)
-* SAVED_LOGS/supernet_training* (for supernet training) - logs with validation on training data (bug, code was fixed) 
-* No MultiGPU Support
+* SAVED_LOGS/supernet_training* (for supernet training) - logs with validation on the training data to thetas optimization (bug, code was fixed) 
+* No MultiGPU Support yet
 * Training only CIFAR10
 
 # Results, Cifar10

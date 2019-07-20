@@ -7,7 +7,7 @@
 ### Illustration of the architecture
 
 <p align="center">
-<img src="pictures/experiment_architecture.png" alt="experiment_architecture" width=80% />
+<img src="pictures/experiment_architecture.png" alt="experiment_architecture" width=50% />
 </p>
 <p align="center"> A simple architecture to test NAS performance on a partial selection </p>
 
@@ -19,14 +19,14 @@
 ### An experiment with DARTS
 
 <p align="center">
-<img src="pictures/experiment_darts.png" alt="experiment_darts" width=80% />
+<img src="pictures/experiment_darts.png" alt="experiment_darts" width=35% />
 </p>
 <p align="center"> Green line - weights of the GOOD model; Grey line - weights of the BAD model </p>
 
 ### An experiment with FBNet
 
 <p align="center">
-<img src="pictures/experiment_fbnet.png" alt="experiment_fbnet" width=80% />
+<img src="pictures/experiment_fbnet.png" alt="experiment_fbnet" width=35% />
 </p>
 <p align="center"> Blue line - weights of the GOOD model; Red line - weights of the BAD model </p>
 

@@ -43,6 +43,10 @@ Utils stuff is taken from [DARTS repository](https://github.com/quark0/darts/blo
 
 **Note**: as it was stated in the paper and according to my results, if we train with small images (as cifar's 32x32), we can see a lot of 'skip' layers into the resulting architecture. I feel, for cifar10 we should search for less number of layers
 
+# FBNet Optimization performance
+We have no theoretical guarantees of converjence. So, I run a distinct checking experiment to compare the method with the pioneer of gradient NASes in application to search a part of a NN. 
+See **[DARTS VS FBNet.md](https://github.com/AnnaAraslanova/FBNet/blob/master/DARTS_VS_FBNET.md)** for results
+
 # Code Structure and Training Pipeline, Cifar10
 
 The repository consists of 2 Neural Net Models:
@@ -53,7 +57,7 @@ The repository consists of 2 Neural Net Models:
 
 > They use different functions and architectures specification. Functions used by both Nets are in the folders: *general_functions* (utilities) and *fbnet_building_blocks* (modified code of facebookresearch team)
 
-I encourage you to visit **TRAINIG_DETAILS.md in this folder** for details and instructions.
+I encourage you to visit **[TRAINIG_DETAILS.md](https://github.com/AnnaAraslanova/FBNet/blob/master/DARTS_VS_FBNET.md) in this folder** for details and instructions.
 
 # Dependencies
 

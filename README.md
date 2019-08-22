@@ -39,7 +39,7 @@ Utils stuff is taken from [DARTS repository](https://github.com/quark0/darts/blo
 | fbnet_cpu_sample1 | 82.8% | 98.9% |
 | fbnet_cpu_sample2 | 80.6% | 95.7% |
 
-**Note: be cautious!** these numbers are just validation's the bests (without confidence intervals, measured in a single run). Do not use these numbers to make decisions. They are here to compliment the tensorboards in the `SAVED_LOGS` directory. The reason why I don't split data into validation and test is *in the next note*. *I plan to test on Imagenet someday and calculate the final numbers*
+**Note: be cautious!** these numbers are just validation's the bests (without confidence intervals, measured in a single run). Do not use these numbers to make decisions. They are here to compliment the tensorboards in the `SAVED_LOGS` directory. The reason why I don't split data into validation and test is *in the next note*.
 
 **Note**: as it was stated in the paper and according to my results, if we train with small images (as cifar's 32x32), we can see a lot of 'skip' layers into the resulting architecture. I feel, for cifar10 we should search for less number of layers
 

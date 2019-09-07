@@ -62,7 +62,7 @@ The repository consists of 2 Neural Net Models:
 
 > They use different functions and architectures specification. Functions used by both Nets are in the folders: *general_functions* (utilities) and *fbnet_building_blocks* (modified code of facebookresearch team)
 
-I encourage you to visit **[TRAINIG_DETAILS.md](https://github.com/AnnaAraslanova/FBNet/blob/master/DARTS_VS_FBNET.md) in this folder** for details and instructions.
+I encourage you to visit **[TRAINIG_DETAILS.md](https://github.com/AnnaAraslanova/FBNet/blob/master/TRAINIG_DETAILS.md) in this folder** for details and instructions.
 
 # Dependencies
 

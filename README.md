@@ -22,6 +22,11 @@ Utils stuff is taken from [DARTS repository](https://github.com/quark0/darts/blo
 * No MultiGPU Support yet
 * Training only CIFAR10
 
+# Good News!
+FacebookResearch published weights for the resulted architectures: FBNet-A, FBNet-B & FBNet-C (trained on imagenet)
+
+https://github.com/facebookresearch/mobile-vision
+
 # Results, Cifar10
 
 > The architectures are not SOTAs: we **search only for filters' sizes** (these numbers are good for the simple architecture) and the goal is to **Reduce Inference Time for Your Device**

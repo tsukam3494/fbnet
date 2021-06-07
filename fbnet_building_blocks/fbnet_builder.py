@@ -34,25 +34,25 @@ PRIMITIVES = {
     "skip": lambda C_in, C_out, expansion, stride, **kwargs: Identity(
         C_in, C_out, stride
     ),
-    "ir_k3": lambda C_in, C_out, expansion, stride, **kwargs: IRFBlock(
+    "ir_k3": lambda C_in, C_out, expansion, stride, **kwargs: IRFBlock( # need expansion
         C_in, C_out, expansion, stride, **kwargs
     ),
-    "ir_k5": lambda C_in, C_out, expansion, stride, **kwargs: IRFBlock(
+    "ir_k5": lambda C_in, C_out, expansion, stride, **kwargs: IRFBlock( # need expansion
         C_in, C_out, expansion, stride, kernel=5, **kwargs
     ),
-    "ir_k7": lambda C_in, C_out, expansion, stride, **kwargs: IRFBlock(
+    "ir_k7": lambda C_in, C_out, expansion, stride, **kwargs: IRFBlock( # need expansion
         C_in, C_out, expansion, stride, kernel=7, **kwargs
     ),
-    "ir_k1": lambda C_in, C_out, expansion, stride, **kwargs: IRFBlock(
+    "ir_k1": lambda C_in, C_out, expansion, stride, **kwargs: IRFBlock( # need expansion
         C_in, C_out, expansion, stride, kernel=1, **kwargs
     ),
-    "shuffle": lambda C_in, C_out, expansion, stride, **kwargs: IRFBlock(
+    "shuffle": lambda C_in, C_out, expansion, stride, **kwargs: IRFBlock( # need expansion
         C_in, C_out, expansion, stride, shuffle_type="mid", pw_group=4, **kwargs
     ),
     "basic_block": lambda C_in, C_out, expansion, stride, **kwargs: CascadeConv3x3(
         C_in, C_out, stride
     ),
-    "shift_5x5": lambda C_in, C_out, expansion, stride, **kwargs: ShiftBlock5x5(
+    "shift_5x5": lambda C_in, C_out, expansion, stride, **kwargs: ShiftBlock5x5( # need expansion
         C_in, C_out, expansion, stride
     ),
     # layer search 2
@@ -91,15 +91,7 @@ PRIMITIVES = {
         C_in, C_out, 6, stride, kernel=3, se=True, **kwargs
     ),
     "ir_k3_s4_se": lambda C_in, C_out, expansion, stride, **kwargs: IRFBlock(
-        C_in,
-        C_out,
-        4,
-        stride,
-        kernel=3,
-        shuffle_type="mid",
-        pw_group=4,
-        se=True,
-        **kwargs
+        C_in, C_out, 4, stride, kernel=3, shuffle_type="mid", pw_group=4, se=True, **kwargs
     ),
     "ir_k5_e1_se": lambda C_in, C_out, expansion, stride, **kwargs: IRFBlock(
         C_in, C_out, 1, stride, kernel=5, se=True, **kwargs
@@ -111,15 +103,7 @@ PRIMITIVES = {
         C_in, C_out, 6, stride, kernel=5, se=True, **kwargs
     ),
     "ir_k5_s4_se": lambda C_in, C_out, expansion, stride, **kwargs: IRFBlock(
-        C_in,
-        C_out,
-        4,
-        stride,
-        kernel=5,
-        shuffle_type="mid",
-        pw_group=4,
-        se=True,
-        **kwargs
+        C_in, C_out, 4, stride, kernel=5, shuffle_type="mid", pw_group=4, se=True, **kwargs
     ),
     # layer search 3 (in addition to layer search 2)
     "ir_k3_s2": lambda C_in, C_out, expansion, stride, **kwargs: IRFBlock(
@@ -129,29 +113,13 @@ PRIMITIVES = {
         C_in, C_out, 1, stride, kernel=5, shuffle_type="mid", pw_group=2, **kwargs
     ),
     "ir_k3_s2_se": lambda C_in, C_out, expansion, stride, **kwargs: IRFBlock(
-        C_in,
-        C_out,
-        1,
-        stride,
-        kernel=3,
-        shuffle_type="mid",
-        pw_group=2,
-        se=True,
-        **kwargs
+        C_in, C_out, 1, stride, kernel=3, shuffle_type="mid", pw_group=2, se=True, **kwargs
     ),
     "ir_k5_s2_se": lambda C_in, C_out, expansion, stride, **kwargs: IRFBlock(
-        C_in,
-        C_out,
-        1,
-        stride,
-        kernel=5,
-        shuffle_type="mid",
-        pw_group=2,
-        se=True,
-        **kwargs
+        C_in, C_out, 1, stride, kernel=5, shuffle_type="mid", pw_group=2, se=True, **kwargs
     ),
     # layer search 4 (in addition to layer search 3)
-    "ir_k3_sep": lambda C_in, C_out, expansion, stride, **kwargs: IRFBlock(
+    "ir_k3_sep": lambda C_in, C_out, expansion, stride, **kwargs: IRFBlock( # need expansion
         C_in, C_out, expansion, stride, kernel=3, cdw=True, **kwargs
     ),
     "ir_k33_e1": lambda C_in, C_out, expansion, stride, **kwargs: IRFBlock(
@@ -235,6 +203,7 @@ class CascadeConv3x3(nn.Sequential):
             BatchNorm2d(C_out),
         ]
         super(CascadeConv3x3, self).__init__(*ops)
+        self.output_depth = C_out
         self.res_connect = (stride == 1) and (C_in == C_out)
 
     def forward(self, x):
@@ -302,6 +271,7 @@ class ShiftBlock5x5(nn.Sequential):
     def __init__(self, C_in, C_out, expansion, stride):
         assert stride in [1, 2]
         self.res_connect = (stride == 1) and (C_in == C_out)
+        self.output_depth = C_out
 
         C_mid = _get_divisible_by(C_in * expansion, 8, 8)
 
@@ -693,6 +663,7 @@ def get_blocks(arch_def, stage_indices=None, block_indices=None):
             keep = False
         if keep:
             ret["stages"].append(block)
+    #print(ret)
     return ret
 
 
@@ -718,6 +689,7 @@ class FBNetBuilder(object):
         channel = stage_info[0]
         stride = stage_info[1]
         out_depth = self._get_divisible_width(int(channel * self.width_ratio))
+        #print(out_depth)
         kernel = 3
         if len(stage_info) > 2:
             kernel = stage_info[2]
@@ -752,11 +724,16 @@ class FBNetBuilder(object):
             tcns = block["block"]
             n = tcns[2]
             assert n == 1
+            if block["block_op_type"][0:1]=="ir":
+                print("lagl;ihr;lighqoergoq;ehrrrrrrrrrrrrr")
+            #print(block["block_op_type"])
             nnblock = self.add_ir_block(tcns, [block_op_type])
+            #print(nnblock)
             nn_name = "xif{}_{}".format(stage_idx, block_idx)
             assert nn_name not in modules
             modules[nn_name] = nnblock
         ret = nn.Sequential(modules)
+        #print(ret)
         return ret
 
     # def add_final_pool(self, model, blob_in, kernel_size):
@@ -814,6 +791,7 @@ class FBNetBuilder(object):
 def _get_trunk_cfg(arch_def):
     num_stages = get_num_stages(arch_def)
     trunk_stages = arch_def.get("backbone", range(num_stages - 1))
+    #print(trunk_stages)
     ret = get_blocks(arch_def, stage_indices=trunk_stages)
     return ret
 
@@ -824,6 +802,7 @@ class FBNet(nn.Module):
         super(FBNet, self).__init__()
         self.first = builder.add_first(arch_def["first"], dim_in=dim_in)
         trunk_cfg = _get_trunk_cfg(arch_def)
+        #print(trunk_cfg)
         self.stages = builder.add_blocks(trunk_cfg["stages"])
         self.last_stages = builder.add_last_states(cnt_classes)
     
@@ -838,5 +817,5 @@ def get_model(arch, cnt_classes):
     arch_def = MODEL_ARCH[arch]
     arch_def = unify_arch_def(arch_def)
     builder = FBNetBuilder(width_ratio=1.0, bn_type="bn", width_divisor=8, dw_skip_bn=True, dw_skip_relu=True)
-    model = FBNet(builder, arch_def, dim_in=3, cnt_classes=cnt_classes)
+    model = FBNet(builder, arch_def, dim_in=1, cnt_classes=cnt_classes)
     return model

@@ -5,22 +5,22 @@ CONFIG_SUPERNET = {
         'gpu_ids' : [0]
     },
     'lookup_table' : {
-        'create_from_scratch' : False,
+        'create_from_scratch' : True,
         'path_to_lookup_table' : './supernet_functions/lookup_table.txt',
-        'number_of_runs' : 50 # each operation run number_of_runs times and then we will take average
+        'number_of_runs' : 10000 # each operation run number_of_runs times and then we will take average
     },
     'logging' : {
         'path_to_log_file' : './supernet_functions/logs/logger/',
         'path_to_tensorboard_logs' : './supernet_functions/logs/tb'
     },
     'dataloading' : {
-        'batch_size' : 1000,
+        'batch_size' : 10,
         'w_share_in_train' : 0.8,
         'path_to_save_data' : './cifar10_data'
     },
     'optimizer' : {
         # SGD parameters for w
-        'w_lr' : 0.1,
+        'w_lr' : 0.03,
         'w_momentum' : 0.9,
         'w_weight_decay' : 1e-4,
         # Adam parameters for thetas

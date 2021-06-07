@@ -1,7 +1,9 @@
 import os
 import logging
 import torch
+import re
 from fbnet_building_blocks.fbnet_modeldef import MODEL_ARCH
+
 
 class AverageMeter(object):
     def __init__(self, name=''):
@@ -19,15 +21,16 @@ class AverageMeter(object):
         self.sum += val * n
         self.cnt += n
         self.avg = self.sum / self.cnt
-  
+
     def __str__(self):
         return "%s: %.5f" % (self._name, self.avg)
-  
+
     def get_avg(self):
         return self.avg
-    
+
     def __repr__(self):
         return self.__str__()
+
 
 def weights_init(m, deepth=0, max_depth=2):
     if deepth > max_depth:
@@ -51,6 +54,7 @@ def weights_init(m, deepth=0, max_depth=2):
     else:
         raise ValueError("%s is unk" % m.__class__.__name__)
 
+
 def get_logger(file_path):
     """ Make python logger """
     # [!] Since tensorboardX use default logger (e.g. logging.info()), we should use custom logger
@@ -68,27 +72,33 @@ def get_logger(file_path):
 
     return logger
 
+
 # Example:
 # utils.save(model, os.path.join(args.save, 'weights.pt'))
 def save(model, model_path):
     torch.save(model.state_dict(), model_path)
 
+
 def load(model, model_path):
     model.load_state_dict(torch.load(model_path))
+
 
 def add_text_to_file(text, file_path):
     with open(file_path, 'a') as f:
         f.write(text)
-    
+
+
 def clear_files_in_the_list(list_of_paths):
     for file_name in list_of_paths:
         open(file_name, 'w').close()
+
 
 def create_directories_from_list(list_of_directories):
     for directory in list_of_directories:
         if not os.path.exists(directory):
             os.makedirs(directory)
-       
+
+
 def accuracy(output, target, topk=(1,)):
     """ Computes the precision@k for the specified values of k """
     maxk = max(topk)
@@ -104,15 +114,17 @@ def accuracy(output, target, topk=(1,)):
 
     res = []
     for k in topk:
-        correct_k = correct[:k].view(-1).float().sum(0)
+        correct_k = correct[:k].contiguous().view(-1).float().sum(0)
         res.append(correct_k.mul_(1.0 / batch_size))
 
     return res
+
 
 def check_tensor_in_list(atensor, alist):
     if any([(atensor == t_).all() for t_ in alist if atensor.shape == t_.shape]):
         return True
     return False
+
 
 # Create an ARCH=model specification (see fbnet_building_blocks/fbnet_modeldef.py)
 # and add the ARCH into MODEL_ARCH of fbnet_building_blocks/fbnet_modeldef.py with name "my_unique_name_for_ARCH"
@@ -127,48 +139,85 @@ def check_tensor_in_list(atensor, alist):
 #              "ir_k5_e1", "ir_k5_e3", "ir_k5_e6", "ir_k5_e1", "ir_k5_e6", "ir_k5_e6", "ir_k3_e6"]
 # my_unique_name_for_ARCH = "my_unique_name_for_ARCH"
 def writh_new_ARCH_to_fbnet_modeldef(ops_names, my_unique_name_for_ARCH):
-    assert len(ops_names) == 22
     if my_unique_name_for_ARCH in MODEL_ARCH:
         print("The specification with the name", my_unique_name_for_ARCH, "already written \
               to the fbnet_building_blocks.fbnet_modeldef. Please, create a new name \
               or delete the specification from fbnet_building_blocks.fbnet_modeldef (by hand)")
         assert my_unique_name_for_ARCH not in MODEL_ARCH
-    
-    ### create text to insert
-    
+
+    # read search space from lookup_table_builder
+    with open('./supernet_functions/lookup_table_builder.py') as f:
+        lines = f.readlines()
+    for i in range(len(lines)):
+        if lines[i][6:18] == "channel_size":
+            first_layer_idx = i
+        if lines[i][6:13] == "strides":
+            last_layer_idx = i - 1
+
+    # read channel_size each stage from lookup_table_builder
+    channel_size_shape = lines[first_layer_idx:last_layer_idx]
+    pattern = re.compile(r'[0-9]+')
+    for i in range(len(channel_size_shape)):
+        channel_size_shape[i] = pattern.findall(channel_size_shape[i])
+    print(channel_size_shape)
+    # read stride each stage from lookup_table_builder
+    stride_shape = lines[last_layer_idx + 1:last_layer_idx + last_layer_idx - first_layer_idx + 1]
+    for i in range(len(stride_shape)):
+        stride_shape[i] = pattern.findall(stride_shape[i])
+
+    # create text to insert
     text_to_write = "    \"" + my_unique_name_for_ARCH + "\": {\n\
-            \"block_op_type\": [\n"
+        \"block_op_type\": [\n"
 
     ops = ["[\"" + str(op) + "\"], " for op in ops_names]
-    ops_lines = [ops[0], ops[1:5], ops[5:9], ops[9:13], ops[13:17], ops[17:21], ops[21]]
-    ops_lines = [''.join(line) for line in ops_lines]
-    text_to_write += '            ' + '\n            '.join(ops_lines)
-
     e = [(op_name[-1] if op_name[-2] == 'e' else '1') for op_name in ops_names]
 
+    layer_counter = 0
+    ops_lines = []
+    e_lines = []
+    for i in range(len(channel_size_shape)):
+        if len(channel_size_shape[i]) == 1:
+            ops_lines.append([ops[layer_counter], ])
+            e_lines.append([e[layer_counter]])
+            layer_counter += 1
+        else:
+            ops_lines.append(ops[layer_counter:layer_counter + len(channel_size_shape[i])])
+            e_lines.append(e[layer_counter:layer_counter + len(channel_size_shape[i])])
+            layer_counter += len(channel_size_shape[i])
+
+    ops_lines = [''.join(line) for line in ops_lines]
+
+    # add text
+    text_to_write += '            ' + '\n            '.join(ops_lines)
+
+    # data for text of stage
+    block_on_types = []
+    for i in range(len(channel_size_shape)):
+        block_on_types.append([])
+        if isinstance(e_lines[i], list):
+            for j in range(len(channel_size_shape[i])):
+                block_on_types[i].append(
+                    [[int(e_lines[i][j]), int(channel_size_shape[i][j]), 1, int(stride_shape[i][j])]])
+        else:
+            block_on_types[i].append([[int(e_lines[i]), int(channel_size_shape[i]), 1, int(stride_shape[i])]])
+
+
     text_to_write += "\n\
+        ],\n\
+        \"block_cfg\": {\n\
+            \"first\": [16, 2],\n\
+            \"stages\": [\n"
+    for block_on_type in block_on_types:
+        text_to_write += "                " + str(block_on_type)[1:-1] + ",\n"
+
+    text_to_write += "\
             ],\n\
-            \"block_cfg\": {\n\
-                \"first\": [16, 2],\n\
-                \"stages\": [\n\
-                    [["+e[0]+", 16, 1, 1]],                                                        # stage 1\n\
-                    [["+e[1]+", 24, 1, 2]],  [["+e[2]+", 24, 1, 1]],  \
-    [["+e[3]+", 24, 1, 1]],  [["+e[4]+", 24, 1, 1]],  # stage 2\n\
-                    [["+e[5]+", 32, 1, 2]],  [["+e[6]+", 32, 1, 1]],  \
-    [["+e[7]+", 32, 1, 1]],  [["+e[8]+", 32, 1, 1]],  # stage 3\n\
-                    [["+e[9]+", 64, 1, 2]],  [["+e[10]+", 64, 1, 1]],  \
-    [["+e[11]+", 64, 1, 1]],  [["+e[12]+", 64, 1, 1]],  # stage 4\n\
-                    [["+e[13]+", 112, 1, 1]], [["+e[14]+", 112, 1, 1]], \
-    [["+e[15]+", 112, 1, 1]], [["+e[16]+", 112, 1, 1]], # stage 5\n\
-                    [["+e[17]+", 184, 1, 2]], [["+e[18]+", 184, 1, 1]], \
-    [["+e[19]+", 184, 1, 1]], [["+e[20]+", 184, 1, 1]], # stage 6\n\
-                    [["+e[21]+", 352, 1, 1]],                                                       # stage 7\n\
-                ],\n\
-                \"backbone\": [num for num in range(23)],\n\
-            },\n\
+            \"backbone\": [num for num in range(" + str(len(e) + 1) + ")],\n\
         },\n\
+    },\n\
 }\
 "
+
     ### open file and find place to insert
     with open('./fbnet_building_blocks/fbnet_modeldef.py') as f1:
         lines = f1.readlines()
